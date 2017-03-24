@@ -23,11 +23,17 @@ export default class Player extends Component {
       transform: `rotate(${this.props.direction}deg)`
     }
 
+    let playerHealthStyle = {
+      width: this.props.health + '%'
+    }
+
     return (
       <div className="player-container" style={playerContainerStyle}>
         <div className="player" style={playerStyle}></div>
         <div className="player-name">{this.props.username}</div>
-        <div className="player-health">{this.props.health}</div>
+        <div className="player-health-container">
+          <div className="player-health" style={playerHealthStyle}></div>
+        </div>
       </div>
     )
   }

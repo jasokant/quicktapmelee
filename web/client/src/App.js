@@ -290,7 +290,7 @@ class App extends Component {
           }
         </div>
         <div className="end-screen" style={endScreenStyle}>
-          <div>
+          <div className="winner">
             {
               this.state.players.length > 0 ?
                 this.state.players.filter((player) => {
