@@ -22,7 +22,29 @@ class App extends Component {
 
     this.state = {
       players: [{
-        name: 'Player 1'
+        id: "",
+        username: 'Player 1',
+        acceleration: 0,
+        rotation: 0,
+        velocity: 0,
+        direction: 0,
+        position: {
+          x: 10,
+          y: 10
+        },
+        health: 100
+      }, {
+        id: "",
+        username: 'Player 2',
+        acceleration: 0,
+        rotation: 0,
+        velocity: 0,
+        direction: 0,
+        position: {
+          x: 50,
+          y: 50
+        },
+        health: 100
       }],
       battleStarted: false,
       battleEnded: false
@@ -30,13 +52,17 @@ class App extends Component {
   }
 
   startBattle = () => {
-    alert('test')
+    this.setState({battleStarted: true})
   }
 
   render() {
+    let startScreenStyle = this.state.battleStarted ? { top: "100vh" } : { top: "0" };
+    let gameScreenStyle = this.state.battleStarted ? { top: "0" } : { top: "-100vh" };
+    let endScreenStyle = this.state.battleEnded ? { top: "0" } : { top: "-100vh" };
+
     return (
       <div className="app">
-        <div className="start-screen">
+        <div className="start-screen" style={startScreenStyle}>
           <div className="start-screen__content">
             <div className="start-screen__content__title">
             </div>
@@ -53,7 +79,7 @@ class App extends Component {
                 {
                   this.state.players.map((player) => {
                     return (
-                      <div className="battle-roster__player">{player.name}</div>
+                      <div className="battle-roster__player">{player.username}</div>
                     )
                   })
                 }
@@ -61,9 +87,9 @@ class App extends Component {
             </div>
           </div>
         </div>
-        <div className="game-screen">
+        <div className="game-screen" style={gameScreenStyle}>
         </div>
-        <div className="end-screen">
+        <div className="end-screen" style={endScreenStyle}>
         </div>
         <img src={qtsLogo} className="qts-logo"></img>
       </div>
