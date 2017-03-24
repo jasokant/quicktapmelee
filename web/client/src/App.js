@@ -117,7 +117,8 @@ class App extends Component {
           x: newXPosition,
           y: newYPosition,
           direction: bullet.direction,
-          timeCreated: bullet.timeCreated
+          timeCreated: bullet.timeCreated,
+          userId: bullet.userId
         }
       })
 
@@ -131,12 +132,11 @@ class App extends Component {
           x: player.position.x + 25 + 20 * Math.sin(player.direction * Math.PI / 180),
           y: player.position.y + 25 - 20 * Math.cos(player.direction * Math.PI / 180),
           direction: player.direction,
-          timeCreated: timestamp
+          timeCreated: timestamp,
+          userId: player.id
         }
       })
     }
-
-    let bullets = oldBullets.concat(newBullets)
 
     let newPlayersArray = this.state.players.map((player) => {
       let factor = player.acceleration === -1 ? 3 : 1;
@@ -170,16 +170,30 @@ class App extends Component {
         newYPosition = 0
       }
 
-      let hitByBullet = oldBullets.reduce((acc, bullet) => {
-        let hit = bullet.x >= player.position.x && bullet.x <= player.position.x + 50 && bullet.y >= player.position.y && bullet.y <= player.position.y + 50;
-        if(hit) {
-          debugger
-        }
-        return acc || hit;
-      }, false);
+      let hitBulletTimeCreated = null;
+      let hitBulletUserId = null;
+
+      let hitByBullet = oldBullets
+        .filter((bullet) => {
+          return bullet.userId !== player.id
+        })
+        .reduce((acc, bullet) => {
+          let hit = bullet.x >= player.position.x && bullet.x <= player.position.x + 50 && bullet.y >= player.position.y && bullet.y <= player.position.y + 50;
+
+          if(hit) {
+            hitBulletTimeCreated = bullet.timeCreated
+            hitBulletUserId = bullet.userId
+          }
+
+          return acc || hit;
+        }, false);
 
       if(hitByBullet) {
         player.health -= 5
+
+        oldBullets = oldBullets.filter((bullet) => {
+          return bullet.timeCreated != hitBulletTimeCreated && bullet.userId !== hitBulletUserId
+        })
       }
 
       return {
@@ -197,6 +211,8 @@ class App extends Component {
       }
     });
 
+    let bullets = oldBullets.concat(newBullets)
+
     this.setState({
       players: newPlayersArray,
       bullets: bullets
@@ -207,7 +223,12 @@ class App extends Component {
   render() {
     let startScreenStyle = this.state.battleStarted ? { top: "100vh" } : { top: "0" };
     let gameScreenStyle = this.state.battleStarted ? { top: "0" } : { top: "-100vh" };
-    let endScreenStyle = this.state.battleEnded ? { top: "0" } : { top: "-100vh" };
+
+    let battleEnded = this.state.players.filter((player) => {
+      return player.health > 0
+    }).length <= 1;
+
+    let endScreenStyle = this.state.battleStarted && battleEnded ? { top: "0" } : { top: "-100vh" };
 
     return (
       <div className="app">
@@ -239,16 +260,20 @@ class App extends Component {
         <div className="game-screen" style={gameScreenStyle}>
           {
             this.state.battleStarted && !this.state.battleEnded ?
-              this.state.players.map((player)=>{
-                return (
-                  <Player
-                    username={player.username}
-                    health={player.health}
-                    x={player.position.x}
-                    y={player.position.y}
-                    direction={player.direction}>
-                  </Player>
-                )
+              this.state.players
+                .filter((player) => {
+                  return player.health > 0
+                })
+                .map((player)=>{
+                  return (
+                    <Player
+                      username={player.username}
+                      health={player.health}
+                      x={player.position.x}
+                      y={player.position.y}
+                      direction={player.direction}>
+                    </Player>
+                  )
               }) : null
           }
           {
@@ -265,6 +290,15 @@ class App extends Component {
           }
         </div>
         <div className="end-screen" style={endScreenStyle}>
+          <div>
+            {
+              this.state.players.length > 0 ?
+                this.state.players.filter((player) => {
+                  return player.health > 0
+                })[0].username : null
+            }
+          </div>
+          <div className="trophy"></div>
         </div>
         <img src={qtsLogo} className="qts-logo"></img>
       </div>

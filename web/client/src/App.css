@@ -90,6 +90,7 @@ html, body, #root, .app {
   width: 100vw;
   height: 100vh;
   position: fixed;
+  top: -100vh;
   background-image: url('./images/Sky.svg');
   background-size: cover;
   transition: all 0.3s ease-in-out;
@@ -116,4 +117,13 @@ html, body, #root, .app {
   background-position: 50% 50%;
   background-repeat: no-repeat;
   position: fixed;
+}
+
+.trophy {
+  background: url("./images/Trophy.svg");
+  width: 100px;
+  height: 400px;
+  background-size: contain;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
 }
