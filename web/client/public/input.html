@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
+  <title>QuickTapMelee</title>
+</head>
+
+<body>
+  <div class="username">
+  </div>
+  <button class="newUser" , onclick="createUser()"> 
+  New User
+  </button>
+  <button class="accelerate" , onclick="setAcceleration(1)"> 
+  Accelerate
+  </button>
+  <button class="stop" , onclick="setAcceleration(0)"> 
+  Stop
+  </button>
+  <button class="deaccelerate" , onclick="setAcceleration(-1)"> 
+  Deaccelerate
+  </button>
+  <button class="rotateLeft" , onclick="setRotation(-1)"> 
+  Rotate left
+  </button>
+  <button class="rotateStop" , onclick="setRotation(0)"> 
+  Rotate stop
+  </button>
+  <button class="rotateRight" , onclick="setRotation(1)"> 
+  Rotate right
+  </button>
+</body>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyAsomyfnSlWJO_pRRzJKy-Gxqjq-KuHvME",
+    authDomain: "quicktapmelee.firebaseapp.com",
+    databaseURL: "https://quicktapmelee.firebaseio.com",
+    storageBucket: "quicktapmelee.appspot.com",
+    messagingSenderId: "165490831895"
+  };
+  firebase.initializeApp(config);
+
+  var database = firebase.database();
+
+  var usersRef = database.ref("/users/");
+
+  var userId = usersRef.push().key;
+
+  var userRef = undefined;
+
+  function createUser() {
+    userId = usersRef.push().key;
+    $(".username").text(userId);
+    var updates = {};
+    updates[userId] = {
+      acceleration: 0,
+      rotation: 0,
+      username: userId
+    };
+    usersRef.update(updates);
+    userRef = database.ref("/users/" + userId);
+  }
+
+  function setAcceleration(value) {
+    if (userRef != undefined) {
+      userRef.update({
+        acceleration: value
+      })
+    }
+  }
+
+  function setRotation(value) {
+    if (userRef != undefined) {
+      userRef.update({
+        rotation: value
+      })
+    }
+  }
+</script>
+
+</html>
