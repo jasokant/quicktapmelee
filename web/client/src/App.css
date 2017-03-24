@@ -107,3 +107,13 @@ html, body, #root, .app {
   background-position: 50% 50%;
   background-repeat: no-repeat;
 }
+
+.bullet {
+  width: 5px;
+  height: 15px;
+  background: url("./images/Bullet.png");
+  background-size: contain;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  position: fixed;
+}

@@ -7,6 +7,7 @@ import readyingButton from './images/Readying_Fighters_BTN.svg';
 import qtsLogo from './images/QTS_Logo.svg';
 
 import Player from './components/Player';
+import Bullet from './components/Bullet'
 
 let backend = firebase.initializeApp({
   apiKey: "AIzaSyAsomyfnSlWJO_pRRzJKy-Gxqjq-KuHvME",
@@ -23,11 +24,14 @@ let usersRef = database.ref("/users/");
 const MAX_VELOCITY = 300;
 const MIN_VELOCITY = 0;
 
-const ANGULAR_ACCELERATION = 90;
+const ANGULAR_ACCELERATION = 180;
 const ACCELERATION = 100;
 
+const BULLET_VELOCITY = 500;
+const BULLET_TIME = 3000;
 
 let t = performance.now()
+let bulletT = performance.now()
 
 class App extends Component {
   constructor() {
@@ -35,6 +39,7 @@ class App extends Component {
 
     this.state = {
       players: [],
+      bullets: [],
       battleStarted: false,
       battleEnded: false
     }
@@ -88,27 +93,94 @@ class App extends Component {
 
     usersRef.on('value', this.usersUpdated)
 
-    t = performance.now()
-
+    t = performance.now();
+    bulletT = t;
     window.requestAnimationFrame(this.tick)
   }
 
   tick = (timestamp) => {
+    let tDiff = (timestamp - t) / 1000;
+    t = timestamp;
+
+    let oldBullets = this.state.bullets
+      .filter((bullet) => {
+        return timestamp - bullet.timeCreated <= BULLET_TIME
+      })
+      .map((bullet) => {
+        let displacement = BULLET_VELOCITY * tDiff;
+        let xDisplacement = Math.sin(bullet.direction / 180 * Math.PI) * displacement;
+        let yDisplacement = Math.cos(bullet.direction / 180 * Math.PI) * displacement;
+        let newXPosition = bullet.x + xDisplacement;
+        let newYPosition = bullet.y - yDisplacement;
+
+        return {
+          x: newXPosition,
+          y: newYPosition,
+          direction: bullet.direction,
+          timeCreated: bullet.timeCreated
+        }
+      })
+
+    let newBullets = []
+
+    if (timestamp - bulletT > 250) {
+      bulletT = timestamp;
+
+      newBullets = this.state.players.map((player) => {
+        return {
+          x: player.position.x + 25 + 20 * Math.sin(player.direction * Math.PI / 180),
+          y: player.position.y + 25 - 20 * Math.cos(player.direction * Math.PI / 180),
+          direction: player.direction,
+          timeCreated: timestamp
+        }
+      })
+    }
+
+    let bullets = oldBullets.concat(newBullets)
+
     let newPlayersArray = this.state.players.map((player) => {
-      let tDiff = (timestamp - t) / 1000;
-      t = timestamp;
+      let factor = player.acceleration === -1 ? 3 : 1;
+      let newVelocity = player.velocity + (factor * ACCELERATION * player.acceleration * tDiff);
+      if (newVelocity > MAX_VELOCITY) {
+        newVelocity = MAX_VELOCITY;
+      }
+      if (newVelocity < MIN_VELOCITY){
+        newVelocity = MIN_VELOCITY;
+      }
 
-      let newVelocity = player.velocity + (ACCELERATION * tDiff);
-      let newDirection = player.direction + (ANGULAR_ACCELERATION * tDiff);
+      let newDirection = player.direction + (ANGULAR_ACCELERATION * player.rotation * tDiff);
 
-      let middleDirection = player.direction + ANGULAR_ACCELERATION * tDiff / 2;
+      let middleDirection = player.direction + (ANGULAR_ACCELERATION * player.rotation * tDiff / 2);
+      let displacement = (player.velocity * tDiff) + (factor * ACCELERATION * player.rotation * Math.pow(tDiff,2) / 2);
 
-      let displacement = player.velocity * tDiff + ACCELERATION * Math.pow(tDiff,2) / 2;
-
-      let xDisplacement = Math.cos(middleDirection / 180 * Math.PI) * displacement;
-      let yDisplacement = Math.sin(middleDirection / 180 * Math.PI) * displacement;
+      let xDisplacement = Math.sin(middleDirection / 180 * Math.PI) * displacement;
+      let yDisplacement = Math.cos(middleDirection / 180 * Math.PI) * displacement;
       let newXPosition = player.position.x + xDisplacement;
-      let newYPosition = player.position.y + yDisplacement;
+      let newYPosition = player.position.y - yDisplacement;
+
+      if (newXPosition > (window.innerWidth - 50)) {
+        newXPosition = window.innerWidth - 50
+      } else if (newXPosition < 0) {
+        newXPosition = 0
+      }
+
+      if (newYPosition > (window.innerHeight - 50)) {
+        newYPosition = window.innerHeight - 50
+      } else if (newYPosition < 0) {
+        newYPosition = 0
+      }
+
+      let hitByBullet = oldBullets.reduce((acc, bullet) => {
+        let hit = bullet.x >= player.position.x && bullet.x <= player.position.x + 50 && bullet.y >= player.position.y && bullet.y <= player.position.y + 50;
+        if(hit) {
+          debugger
+        }
+        return acc || hit;
+      }, false);
+
+      if(hitByBullet) {
+        player.health -= 5
+      }
 
       return {
         id: player.id,
@@ -125,7 +197,10 @@ class App extends Component {
       }
     });
 
-    this.setState({players: newPlayersArray })
+    this.setState({
+      players: newPlayersArray,
+      bullets: bullets
+    });
     window.requestAnimationFrame(this.tick)
   }
 
@@ -141,7 +216,7 @@ class App extends Component {
             <div className="start-screen__content__title">
             </div>
             {
-              this.state.players.length > 1 ? (
+              this.state.players.length > 0 ? (
                   <img src={beginButton} className="start-screen__content__start-button" onClick={this.startBattle}></img>
                 ) : (
                   <img src={readyingButton} className="start-screen__content__start-button"></img>
@@ -173,6 +248,18 @@ class App extends Component {
                     y={player.position.y}
                     direction={player.direction}>
                   </Player>
+                )
+              }) : null
+          }
+          {
+            this.state.battleStarted && !this.state.battleEnded ?
+              this.state.bullets.map((bullet) => {
+                return (
+                  <Bullet
+                    x={bullet.x}
+                    y={bullet.y}
+                    direction={bullet.direction}>
+                  </Bullet>
                 )
               }) : null
           }
