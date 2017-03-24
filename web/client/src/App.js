@@ -127,15 +127,19 @@ class App extends Component {
     if (timestamp - bulletT > 250) {
       bulletT = timestamp;
 
-      newBullets = this.state.players.map((player) => {
-        return {
-          x: player.position.x + 25 + 20 * Math.sin(player.direction * Math.PI / 180),
-          y: player.position.y + 25 - 20 * Math.cos(player.direction * Math.PI / 180),
-          direction: player.direction,
-          timeCreated: timestamp,
-          userId: player.id
-        }
-      })
+      newBullets = this.state.players
+        .filter((player) => {
+          return player.health > 0
+        })
+        .map((player) => {
+          return {
+            x: player.position.x + 25 + 20 * Math.sin(player.direction * Math.PI / 180),
+            y: player.position.y + 25 - 20 * Math.cos(player.direction * Math.PI / 180),
+            direction: player.direction,
+            timeCreated: timestamp,
+            userId: player.id
+          }
+        })
     }
 
     let newPlayersArray = this.state.players.map((player) => {
@@ -158,17 +162,26 @@ class App extends Component {
       let newXPosition = player.position.x + xDisplacement;
       let newYPosition = player.position.y - yDisplacement;
 
+      let collision = 0;
       if (newXPosition > (window.innerWidth - 50)) {
-        newXPosition = window.innerWidth - 50
+        newXPosition = window.innerWidth - 50;
+        collision = 1;
       } else if (newXPosition < 0) {
-        newXPosition = 0
+        newXPosition = 0;
+        collision = 1;
       }
 
       if (newYPosition > (window.innerHeight - 50)) {
-        newYPosition = window.innerHeight - 50
+        newYPosition = window.innerHeight - 50;
+        collision = 1;
       } else if (newYPosition < 0) {
-        newYPosition = 0
+        newYPosition = 0;
+        collision = 1;
       }
+
+      database.ref("/users/"+player.id).update({
+        collision: collision
+      })
 
       let hitBulletTimeCreated = null;
       let hitBulletUserId = null;
@@ -190,7 +203,6 @@ class App extends Component {
 
       if(hitByBullet) {
         player.health -= 5
-
         oldBullets = oldBullets.filter((bullet) => {
           return bullet.timeCreated != hitBulletTimeCreated && bullet.userId !== hitBulletUserId
         })
@@ -217,6 +229,7 @@ class App extends Component {
       players: newPlayersArray,
       bullets: bullets
     });
+
     window.requestAnimationFrame(this.tick)
   }
 
