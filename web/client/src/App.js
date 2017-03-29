@@ -27,8 +27,9 @@ const MIN_VELOCITY = 0;
 const ANGULAR_ACCELERATION = 180;
 const ACCELERATION = 100;
 
-const BULLET_VELOCITY = 500;
-const BULLET_TIME = 3000;
+const BULLET_VELOCITY = 750;
+const BULLET_TIME = 2000;
+const BULLET_FREQUENCY = 100;
 
 let t = performance.now()
 let bulletT = performance.now()
@@ -124,7 +125,7 @@ class App extends Component {
 
     let newBullets = []
 
-    if (timestamp - bulletT > 250) {
+    if (timestamp - bulletT > BULLET_FREQUENCY) {
       bulletT = timestamp;
 
       newBullets = this.state.players
@@ -162,26 +163,17 @@ class App extends Component {
       let newXPosition = player.position.x + xDisplacement;
       let newYPosition = player.position.y - yDisplacement;
 
-      let collision = 0;
       if (newXPosition > (window.innerWidth - 50)) {
         newXPosition = window.innerWidth - 50;
-        collision = 1;
       } else if (newXPosition < 0) {
         newXPosition = 0;
-        collision = 1;
       }
 
       if (newYPosition > (window.innerHeight - 50)) {
         newYPosition = window.innerHeight - 50;
-        collision = 1;
       } else if (newYPosition < 0) {
         newYPosition = 0;
-        collision = 1;
       }
-
-      database.ref("/users/"+player.id).update({
-        collision: collision
-      })
 
       let hitBulletTimeCreated = null;
       let hitBulletUserId = null;
@@ -206,6 +198,16 @@ class App extends Component {
         oldBullets = oldBullets.filter((bullet) => {
           return bullet.timeCreated != hitBulletTimeCreated && bullet.userId !== hitBulletUserId
         })
+
+        database.ref("/users/"+player.id).update({
+          collision: 1
+        })
+
+        // setTimeout(()=>{
+        //   database.ref("/users/"+player.id).update({
+        //     collision: 0
+        //   })
+        // }, 2000)
       }
 
       return {
